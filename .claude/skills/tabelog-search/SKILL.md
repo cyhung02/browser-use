@@ -40,7 +40,12 @@ Before starting the browser, confirm with the user:
 |-----------|-------------|---------|
 | `location` | Station or area name **in Japanese** | `梅田`, `新大阪駅`, `難波` |
 | `cuisine` (optional) | Food type **in Japanese** | `ラーメン`, `焼肉`, `寿司`, `イタリアン` |
+| `sort_by` | Sort order: `ranking` (by score) or `review_count` (by number of reviews) | default: `ranking` |
 | `open_top_result` | Whether to click into the #1 result for details | default: yes |
+
+**Sort mode decision** — determine `sort_by` from the user's request:
+- Use `ranking` (default) unless the user explicitly asks to sort by review count, e.g. "依評論數", "by most reviews", "口コミが多い順"
+- When in doubt, use `ranking`
 
 **Location translation reference** — convert user input before searching:
 
@@ -111,15 +116,21 @@ Take a screenshot to verify the results page loaded (title should read `[場所]
 
 ---
 
-### Step 4 — Switch to Ranking Sort
+### Step 4 — Switch Sort Tab
+
+Choose the tab based on `sort_by`:
+
+| `sort_by` | Tab to click | Tab label |
+|-----------|-------------|-----------|
+| `ranking` (default) | `ランキング` | Sort by score/rating |
+| `review_count` | `口コミが多い順` | Sort by number of reviews |
 
 ```
-find(query: "ランキング ranking tab")
+find(query: "<tab label> tab")
 → computer(action: "left_click", ref: <ref>)   ← click the link ref, not the generic text ref
 ```
 
-Take a screenshot to confirm the ランキング tab is now active (highlighted/underlined).
-The page title in the browser tab should update to include `ランキング`.
+Take a screenshot to confirm the correct tab is now active (highlighted/underlined).
 
 ---
 
@@ -199,9 +210,9 @@ JSON.stringify(fields, null, 2);
 | Situation | Resolution |
 |-----------|------------|
 | Search returns 0 results | Widen location (area name instead of specific exit), remove cuisine filter, report to user |
-| ランキング tab not found | Scroll up; the 4 tabs are: `標準` / `ランキング` / `口コミが多い順` / `ニューオープン` |
+| Sort tab not found | Scroll up; the 4 tabs are: `標準` / `ランキング` / `口コミが多い順` / `ニューオープン` |
 | Page loads in English | Navigate to `https://tabelog.com` (no `/en/`) — Japanese is the default |
-| `find` returns 2 refs for ランキング | Use the `link` ref (not the `generic` text ref) |
+| `find` returns 2 refs for the tab | Use the `link` ref (not the `generic` text ref) |
 | JavaScript returns `[]` | Tabelog may have updated CSS class names — use screenshot fallback |
 | CAPTCHA / rate limit | Stop immediately, screenshot, and tell the user |
 | Detail page fails to load | Report the restaurant name + URL to user, skip to next result |
