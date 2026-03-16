@@ -44,7 +44,7 @@ Determine the following from the user's request. Ask only for what's missing.
 | `location` | Area or station name in Japanese (see translation table below) | required |
 | `cuisine` | Food type in Japanese, e.g. `ラーメン`, `焼肉`, `寿司` | none (broader results) |
 | `sort_by` | `ranking` = sort by score; `review_count` = sort by number of reviews | `ranking` |
-| `open_top_result` | Open the #1 result for full details | yes |
+| `open_top_n` | How many results to open for full details (intro + hours + budget) | 1 |
 
 **Choosing `sort_by`**: Use `ranking` by default — it surfaces the most acclaimed restaurants based
 on Tabelog's composite score, which is a more reliable quality signal. Switch to `review_count`
@@ -67,6 +67,7 @@ since Tabelog search is optimised for Japanese text:
 | 名古屋 / Nagoya | `名古屋` |
 | 福岡 / Fukuoka | `博多` or `天神` |
 | 目黒 / Meguro | `目黒駅` |
+| 上野 / Ueno | `上野駅` |
 
 Adding 「駅」 to station names gives geographically precise results. Prefer `目黒駅` over `目黒`.
 
@@ -92,11 +93,12 @@ instead of the target station, and JS form submission triggers a Yahoo CAPTCHA.
 The correct sequence is:
 
 1. **Click** the area input (`name="sa"`, placeholder `エリア・駅 [例:銀座、渋谷]`)
-2. **Type** the location name (e.g. `目黒駅`) — this triggers an autocomplete dropdown
-3. **Wait** ~1 second for the autocomplete `<button>` to appear
-4. **Click the autocomplete suggestion button** — this registers the area properly
-5. Fill the keyword field (`name="sk"`) with the cuisine type if provided
-6. **Click the 検索 button** (`aria-label=検索`) to submit
+2. **Type** the location name (e.g. `上野駅`) — this triggers an autocomplete dropdown
+3. **Wait** ~1–2 seconds for the autocomplete suggestion to appear
+4. **Click the autocomplete suggestion** matching the station name — this registers the area properly.
+   The suggestion element type varies: it may be `<button>`, `<li>`, or `<div>`. Match by **text content**, not by element type.
+5. Fill the keyword field (`name="sk"`) with the cuisine type if provided (skip if none)
+6. **Click the 検索 button** — use ID `js-global-search-btn` for reliable targeting
 
 Without step 4, the search defaults to nationwide results even if the input shows the station name.
 
@@ -104,12 +106,14 @@ Without step 4, the search defaults to nationwide results even if the input show
 
 ## Step 3 — Verify Search Results Page
 
-The page title after a successful search looks like:
-`[駅名]でおすすめの美味しい[料理]をご紹介！ | 食べログ`
+The page title after a successful search starts with the station name:
 
-Example: `目黒駅でおすすめの美味しいラーメン・つけ麺をご紹介！ | 食べログ`
+| Condition | Title pattern |
+|-----------|--------------|
+| With cuisine | `[駅名]でおすすめの美味しい[料理]をご紹介！ \| 食べログ` |
+| Without cuisine | `[駅名]でおすすめのグルメ情報をご紹介！ \| 食べログ` |
 
-If the title shows 「全国のお店」, the area filter didn't apply — repeat Step 2.
+If the title shows 「全国のお店」 or does not start with the station name, the area filter didn't apply — repeat Step 2.
 
 ---
 
@@ -174,26 +178,27 @@ If the script returns empty, fall back to screenshots and read the cards visuall
 
 ---
 
-## Step 6 — Open Top Result (if `open_top_result` is true)
+## Step 6 — Open Detail Pages (for top `open_top_n` results)
 
-Navigate to the `url` of rank 1 from the extracted data.
+Navigate to each restaurant's `url` from the extracted data. For each, collect:
 
-On the detail page, collect:
-- Concept / description (お店の特徴)
-- Business hours (営業時間) and regular holiday (定休日)
-- Reservation availability (予約可否)
-- Address (住所)
-- Notable dishes or course menus
+**1. Restaurant intro / PR comment** — try selectors in order, use first non-empty result:
+```javascript
+document.querySelector('.p-rst-intro__txt, .pr-comment, .rstdtl-top__pr-comment-body')?.textContent?.trim()?.slice(0, 200)
+```
+Some restaurants (especially small casual shops) have no PR text — this is normal. Skip gracefully.
 
+**2. Key info from the info table** — extract only the fields you need to keep output concise:
 ```javascript
 (function() {
-  var fields = {};
+  var want = ['ジャンル', '予約可否', '営業時間', '予算（口コミ集計）', '住所', '受賞・選出歴'];
+  var f = {};
   document.querySelectorAll('.rstinfo-table tr').forEach(function(row) {
     var label = row.querySelector('th')?.textContent?.trim();
-    var value = row.querySelector('td')?.textContent?.trim();
-    if (label && value) fields[label] = value;
+    var value = row.querySelector('td')?.textContent?.replace(/\s+/g, ' ').trim().slice(0, 100);
+    if (label && value && want.indexOf(label) !== -1) f[label] = value;
   });
-  return JSON.stringify(fields);
+  return JSON.stringify(f);
 })()
 ```
 
@@ -211,6 +216,7 @@ On the detail page, collect:
 | JavaScript eval returns `None` | browser-use limitation — simplify to single expression; avoid console.log |
 | JavaScript returns empty array | CSS classes may have changed — use screenshot fallback |
 | CAPTCHA / rate limit | Stop, screenshot, and tell the user |
+| Detail page: intro returns None | Restaurant has no PR text — skip gracefully, use info table only |
 | Detail page fails to load | Report restaurant name + URL to user, skip to next result |
 
 ---
