@@ -25,7 +25,7 @@ This skill requires web browsing capability. Use whichever is available:
 | Tool | Key capabilities needed |
 |------|------------------------|
 | **Claude in Chrome** (MCP) | `tabs_context_mcp`, `navigate`, `find`, `form_input`, `computer`, `javascript_tool` |
-| **browser-use** | `browser_use` skill actions (navigate, click, type, extract) |
+| **browser-use** | `open`, `click`, `type`, `eval`, `state`, `screenshot` |
 | **agent-browser** | equivalent navigate / interact / extract actions |
 
 If no browsing tool is available, tell the user to enable one and try again.
@@ -44,7 +44,7 @@ Determine the following from the user's request. Ask only for what's missing.
 | `location` | Area or station name in Japanese (see translation table below) | required |
 | `cuisine` | Food type in Japanese, e.g. `ラーメン`, `焼肉`, `寿司` | none (broader results) |
 | `sort_by` | `ranking` = sort by score; `review_count` = sort by number of reviews | `ranking` |
-| `open_top_result` | Open the #1 result for full details | yes |
+| `open_top_n` | How many results to open for full details (intro + hours + budget) | 1 |
 
 **Choosing `sort_by`**: Use `ranking` by default — it surfaces the most acclaimed restaurants based
 on Tabelog's composite score, which is a more reliable quality signal. Switch to `review_count`
@@ -66,144 +66,140 @@ since Tabelog search is optimised for Japanese text:
 | 札幌 / Sapporo | `札幌` |
 | 名古屋 / Nagoya | `名古屋` |
 | 福岡 / Fukuoka | `博多` or `天神` |
+| 目黒 / Meguro | `目黒駅` |
+| 上野 / Ueno | `上野駅` |
 
-Station-level searches (e.g. `梅田駅`) give more geographically precise results than broad area names.
+Adding 「駅」 to station names gives geographically precise results. Prefer `目黒駅` over `目黒`.
 
 ---
 
 ## Step 1 — Open Tabelog
 
-```
-tabs_context_mcp(createIfEmpty: true)
-tabs_create_mcp()
-navigate(url: "https://tabelog.com")
-```
+Navigate to `https://tabelog.com`.
 
-Take a screenshot to confirm the Japanese homepage loaded. If the page appears in English,
-navigate again — the default URL serves Japanese without a language path segment.
+**⚠️ Language selector popup**: On a fresh session, Tabelog shows a language selection popup at the
+bottom of the page. Click 「日本語」 to dismiss it before proceeding. If skipped, interactions may fail.
+
+Confirm the Japanese homepage has loaded before moving on.
 
 ---
 
-## Step 2 — Fill Search Fields
+## Step 2 — Fill the Area Field (UI interaction required)
 
-The homepage has two inputs:
+**Do NOT fill the area field by setting its value via JavaScript**, and **do NOT submit the form
+via JavaScript** — both bypass Tabelog's area validation. The area will show 「全国」 (nationwide)
+instead of the target station, and JS form submission triggers a Yahoo CAPTCHA.
 
-| Field | Placeholder | Value |
-|-------|------------|-------|
-| Left | `エリア・駅 [例:銀座、渋谷]` | `location` |
-| Centre | `キーワード [例:焼肉、店名、個室]` | `cuisine` (skip if none) |
+The correct sequence is:
 
-Fill using `find` + `form_input`:
+1. **Click** the area input (`name="sa"`, placeholder `エリア・駅 [例:銀座、渋谷]`)
+2. **Type** the location name (e.g. `上野駅`) — this triggers an autocomplete dropdown
+3. **Wait** ~1–2 seconds for the autocomplete suggestion to appear
+4. **Click the autocomplete suggestion** matching the station name — this registers the area properly.
+   The suggestion element type varies: it may be `<button>`, `<li>`, or `<div>`. Match by **text content**, not by element type.
+5. Fill the keyword field (`name="sk"`) with the cuisine type if provided (skip if none)
+6. **Click the 検索 button** — use ID `js-global-search-btn` for reliable targeting
 
-```
-find(query: "area station search input エリア・駅")
-→ form_input(ref: <ref>, value: "<location>")
-
-find(query: "keyword search input キーワード")
-→ form_input(ref: <ref>, value: "<cuisine>")
-```
-
-If `form_input` leaves a field empty, click it and type directly:
-
-```
-computer(action: "left_click", coordinate: <input coords>)
-computer(action: "key", text: "ctrl+a")
-computer(action: "type", text: "<value>")
-```
+Without step 4, the search defaults to nationwide results even if the input shows the station name.
 
 ---
 
-## Step 3 — Submit Search
+## Step 3 — Verify Search Results Page
 
-```
-find(query: "検索 search button yellow")
-→ computer(action: "left_click", ref: <ref>)
-```
+The page title after a successful search starts with the station name:
 
-Take a screenshot to verify the results page loaded (title format: `[場所]の[料理]のお店`).
+| Condition | Title pattern |
+|-----------|--------------|
+| With cuisine | `[駅名]でおすすめの美味しい[料理]をご紹介！ \| 食べログ` |
+| Without cuisine | `[駅名]でおすすめのグルメ情報をご紹介！ \| 食べログ` |
+
+If the title shows 「全国のお店」 or does not start with the station name, the area filter didn't apply — repeat Step 2.
 
 ---
 
 ## Step 4 — Switch Sort Tab
 
-Click the appropriate tab based on `sort_by`:
+Find and click the appropriate tab:
 
-| `sort_by` | Tab label |
-|-----------|-----------|
+| `sort_by` | Tab to click |
+|-----------|-------------|
 | `ranking` (default) | `ランキング` |
 | `review_count` | `口コミが多い順` |
 
-```
-find(query: "<tab label> tab")
-→ computer(action: "left_click", ref: <link ref>)
-```
-
-If `find` returns two refs for the same label, use the `link` ref rather than the `generic` text ref.
-Take a screenshot to confirm the tab is now active (highlighted/underlined).
-
 The four tabs in order are: `標準` → `ランキング` → `口コミが多い順` → `ニューオープン`.
-If the target tab isn't visible, scroll up.
+
+After clicking, confirm the page title includes 「ランキング」.
 
 ---
 
 ## Step 5 — Extract Results
 
-Tabelog result pages are too large for `get_page_text`. Use JavaScript instead.
+Scroll down ~1000px to ensure all cards are rendered, then extract with JavaScript.
 
-First, scroll to trigger lazy-loading:
+### Confirmed CSS class names (as of 2025–2026)
 
-```
-computer(action: "scroll", coordinate: [756, 400], scroll_direction: "down", scroll_amount: 5)
-computer(action: "wait", duration: 1)
-```
+| Data | Selector |
+|------|----------|
+| Restaurant cards | `.list-rst--ranking` |
+| Name + rank number | `a[data-ranking]` — `data-ranking` attribute = rank, text = name |
+| Score | `.c-rating__val--strong` |
+| Review count | `.list-rst__rvw-count-num` |
+| Area / distance | `.list-rst__area-genre` |
+| 百名店 badge | `[class*="hyakumeiten"]` |
 
-Then extract with `javascript_tool`:
+### Extraction script
+
+**Important for browser-use**: `console.log()` output is not captured — only the final expression
+value is returned. Avoid complex multi-statement scripts; use simple single-expression evals or
+pipe-delimited string building to stay reliable.
 
 ```javascript
-const items = document.querySelectorAll('li[class*="list-rst"]');
-const results = [];
-items.forEach((item, i) => {
-  const name     = item.querySelector('[class*="rst-name-main"]')?.textContent?.trim();
-  const score    = item.querySelector('[class*="c-rating__val"]')?.textContent?.trim();
-  const reviews  = item.querySelector('[class*="list-rst__comment-count"]')?.textContent?.trim();
-  const location = item.querySelector('[class*="list-rst__area-genre"]')?.textContent?.trim();
-  const budget   = item.querySelector('[class*="c-table-budget__price"]')?.textContent?.trim();
-  const tagline  = item.querySelector('[class*="list-rst__strong-point"]')?.textContent?.trim();
-  const url      = item.querySelector('a[href*="tabelog.com"]')?.href;
-  if (name) results.push({ rank: i + 1, name, score, reviews, location, budget, tagline, url });
-});
-JSON.stringify(results.slice(0, 10), null, 2);
+// Run this as a single eval — returns pipe-delimited rows, one restaurant per line
+(function() {
+  var links = document.querySelectorAll('a[data-ranking]');
+  var out = [];
+  for (var i = 0; i < Math.min(10, links.length); i++) {
+    var l = links[i];
+    var card = l.closest('.list-rst--ranking');
+    var score   = card.querySelector('.c-rating__val--strong')?.textContent?.trim() || '';
+    var reviews = card.querySelector('.list-rst__rvw-count-num')?.textContent?.trim() || '';
+    var area    = (card.querySelector('.list-rst__area-genre')?.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 60);
+    var badge   = card.querySelector('[class*="hyakumeiten"]') ? '百名店' : '';
+    out.push(l.dataset.ranking + '|' + l.textContent.trim() + '|' + score + '|' + reviews + '|' + area + '|' + badge + '|' + l.href);
+  }
+  return out.join('\n');
+})()
 ```
 
-If JavaScript returns an empty array (Tabelog may have updated its CSS class names), fall back to
-screenshots: take a screenshot, read visible cards, scroll down and repeat as needed.
+Parse each line by splitting on `|`:
+`rank | name | score | reviewCount | areaGenre | badge | url`
+
+If the script returns empty, fall back to screenshots and read the cards visually.
 
 ---
 
-## Step 6 — Open Top Result (if `open_top_result` is true)
+## Step 6 — Open Detail Pages (for top `open_top_n` results)
 
-```
-find(query: "first ranked restaurant name link")
-→ computer(action: "left_click", ref: <ref>)
-```
+Navigate to each restaurant's `url` from the extracted data. For each, collect:
 
-On the detail page, collect:
-- Concept / description (お店の特徴)
-- Business hours (営業時間) and regular holiday (定休日)
-- Reservation availability (予約可否)
-- Address (住所)
-- Notable dishes or course menus
-
-Extract with `javascript_tool`:
-
+**1. Restaurant intro / PR comment** — try selectors in order, use first non-empty result:
 ```javascript
-const fields = {};
-document.querySelectorAll('.rstinfo-table tr').forEach(row => {
-  const label = row.querySelector('th')?.textContent?.trim();
-  const value = row.querySelector('td')?.textContent?.trim();
-  if (label && value) fields[label] = value;
-});
-JSON.stringify(fields, null, 2);
+document.querySelector('.p-rst-intro__txt, .pr-comment, .rstdtl-top__pr-comment-body')?.textContent?.trim()?.slice(0, 200)
+```
+Some restaurants (especially small casual shops) have no PR text — this is normal. Skip gracefully.
+
+**2. Key info from the info table** — extract only the fields you need to keep output concise:
+```javascript
+(function() {
+  var want = ['ジャンル', '予約可否', '営業時間', '予算（口コミ集計）', '住所', '受賞・選出歴'];
+  var f = {};
+  document.querySelectorAll('.rstinfo-table tr').forEach(function(row) {
+    var label = row.querySelector('th')?.textContent?.trim();
+    var value = row.querySelector('td')?.textContent?.replace(/\s+/g, ' ').trim().slice(0, 100);
+    if (label && value && want.indexOf(label) !== -1) f[label] = value;
+  });
+  return JSON.stringify(f);
+})()
 ```
 
 ---
@@ -212,8 +208,15 @@ JSON.stringify(fields, null, 2);
 
 | Situation | Resolution |
 |-----------|------------|
-| 0 results | Broaden the location (area instead of specific exit); remove cuisine filter; report to user |
+| Language popup blocks interaction | Click 日本語 first |
+| Area shows 全国 after search | Didn't click autocomplete suggestion — repeat Step 2 |
+| Yahoo CAPTCHA appears | JS form submission was used — close, reopen Tabelog, use UI interactions only |
+| 0 results | Widen location (area name instead of specific exit); remove cuisine filter |
+| Sort tab not found | Scroll up; tabs order: `標準` → `ランキング` → `口コミが多い順` → `ニューオープン` |
+| JavaScript eval returns `None` | browser-use limitation — simplify to single expression; avoid console.log |
+| JavaScript returns empty array | CSS classes may have changed — use screenshot fallback |
 | CAPTCHA / rate limit | Stop, screenshot, and tell the user |
+| Detail page: intro returns None | Restaurant has no PR text — skip gracefully, use info table only |
 | Detail page fails to load | Report restaurant name + URL to user, skip to next result |
 
 ---
@@ -223,17 +226,16 @@ JSON.stringify(fields, null, 2);
 Present results in Traditional Chinese:
 
 ```
-📍 梅田駅 附近燒肉餐廳排名（食べログ）
+📍 目黒駅 附近拉麵排名（食べログ ランキング）
 
-🥇 第1名：北新地やまがた屋
-   評分：3.77 ｜ 評論數：176則
-   類型：ホルモン、焼肉、鍋
-   最近車站：梅田駅 791m（北新地駅 267m）
-   晚餐預算：¥20,000〜¥29,999
-   特色：北新地隱藏版燒肉名店，2025年百名店認定 🏅
+🥇 第1名：えーちゃん食堂
+   評分：3.80 ｜ 評論數：1,052則
+   距離：目黒駅 680m（不動前駅 659m）
+   類型：ラーメン・つけ麺
+   🏅 ラーメン TOKYO 百名店 2025
 
-🥈 第2名：焼肉フトロ
-   評分：3.75 ｜ 評論數：180則
+🥈 第2名：支那ソバ かづ屋
+   評分：3.77 ｜ 評論數：1,763則
    ...
 
 （最多列出前5~10名）
@@ -242,8 +244,8 @@ Present results in Traditional Chinese:
 ⚠️  評分說明：3.5以上良好，3.8以上優秀，4.0以上為頂級名店
 ```
 
-Highlight the `百名店` badge (百名店 2024/2025) when present — it means the restaurant made
-Tabelog's annual Top 100 list and is a strong quality signal worth calling out.
+Highlight the 百名店 badge when present — it means the restaurant is on Tabelog's annual
+Top 100 list and is a strong quality signal worth calling out.
 
 ---
 
