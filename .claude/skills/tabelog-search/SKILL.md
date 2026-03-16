@@ -60,7 +60,7 @@ since Tabelog search is optimised for Japanese text:
 | 心斎橋 / Shinsaibashi | `心斎橋` |
 | 新大阪 / Shin-Osaka | `新大阪` |
 | 天王寺 | `天王寺` |
-| 新宿 / Shinjuku | `新宿` |
+| 新宿 / Shinjuku | `新宿駅` |
 | 渋谷 / Shibuya | `渋谷` |
 | 銀座 / Ginza | `銀座` |
 | 札幌 / Sapporo | `札幌` |
@@ -119,16 +119,28 @@ If the title shows 「全国のお店」 or does not start with the station name
 
 ## Step 4 — Switch Sort Tab
 
-Find and click the appropriate tab:
-
-| `sort_by` | Tab to click |
-|-----------|-------------|
+| `sort_by` | Tab label |
+|-----------|-----------|
 | `ranking` (default) | `ランキング` |
 | `review_count` | `口コミが多い順` |
 
-The four tabs in order are: `標準` → `ランキング` → `口コミが多い順` → `ニューオープン`.
+**Recommended — navigate directly by URL** (more reliable than clicking):
 
-After clicking, confirm the page title includes 「ランキング」.
+```javascript
+// Get the target tab URL from the page and navigate to it
+Array.from(document.querySelectorAll('a'))
+  .filter(function(a) { return a.textContent.trim() === 'ランキング'; })
+  .map(function(a) { return a.href; })
+  .join('|')
+```
+
+Take the returned URL and navigate to it directly with `browser-use open <url>`.
+
+**Fallback — click the tab** if JS returns empty:
+Find the tab link by text `ランキング` in the page state and click it.
+The four tabs in order: `標準` → `ランキング` → `口コミが多い順` → `ニューオープン`.
+
+Confirm success: page title should include 「ランキング」.
 
 ---
 
@@ -180,27 +192,49 @@ If the script returns empty, fall back to screenshots and read the cards visuall
 
 ## Step 6 — Open Detail Pages (for top `open_top_n` results)
 
-Navigate to each restaurant's `url` from the extracted data. For each, collect:
+### When `open_top_n` > 1 — use parallel subagents (recommended)
 
-**1. Restaurant intro / PR comment** — try selectors in order, use first non-empty result:
+Spawn one subagent per restaurant in the **same message** so they run concurrently.
+Each subagent gets an isolated browser session via `--session r1`, `--session r2`, etc.
+
+Subagent prompt template (repeat for each restaurant, changing session name and URL):
+
+```
+Use browser-use CLI to extract restaurant details from Tabelog.
+Run in sequence:
+1. browser-use --session r<N> open "<url>"
+2. (wait 2 seconds)
+3. browser-use --session r<N> eval "document.querySelector('.p-rst-intro__txt, .pr-comment, .rstdtl-top__pr-comment-body')?.textContent?.trim()?.slice(0, 200)"
+4. browser-use --session r<N> eval "(function(){ var f={}; document.querySelectorAll('.rstinfo-table tr').forEach(function(r){ var l=r.querySelector('th')?.textContent?.trim(); var v=r.querySelector('td')?.textContent?.replace(/\s+/g,' ').trim().slice(0,100); if(l&&v) f[l]=v; }); return JSON.stringify(f); })()"
+5. browser-use --session r<N> close
+Return all output from steps 3 and 4.
+```
+
+> Note: The `want` array filter with Japanese strings can be unreliable in subagents.
+> Extract the full info table (step 4 above) and let the subagent return everything —
+> then filter to the fields you need when composing the final output.
+
+### When `open_top_n` = 1 — navigate directly in main session
+
 ```javascript
+// PR intro
 document.querySelector('.p-rst-intro__txt, .pr-comment, .rstdtl-top__pr-comment-body')?.textContent?.trim()?.slice(0, 200)
 ```
-Some restaurants (especially small casual shops) have no PR text — this is normal. Skip gracefully.
 
-**2. Key info from the info table** — extract only the fields you need to keep output concise:
 ```javascript
+// Info table — full extraction, filter afterwards
 (function() {
-  var want = ['ジャンル', '予約可否', '営業時間', '予算（口コミ集計）', '住所', '受賞・選出歴'];
   var f = {};
   document.querySelectorAll('.rstinfo-table tr').forEach(function(row) {
     var label = row.querySelector('th')?.textContent?.trim();
     var value = row.querySelector('td')?.textContent?.replace(/\s+/g, ' ').trim().slice(0, 100);
-    if (label && value && want.indexOf(label) !== -1) f[label] = value;
+    if (label && value) f[label] = value;
   });
   return JSON.stringify(f);
 })()
 ```
+
+Some restaurants (especially small casual shops) have no PR text — skip gracefully and use the info table only.
 
 ---
 
@@ -212,7 +246,7 @@ Some restaurants (especially small casual shops) have no PR text — this is nor
 | Area shows 全国 after search | Didn't click autocomplete suggestion — repeat Step 2 |
 | Yahoo CAPTCHA appears | JS form submission was used — close, reopen Tabelog, use UI interactions only |
 | 0 results | Widen location (area name instead of specific exit); remove cuisine filter |
-| Sort tab not found | Scroll up; tabs order: `標準` → `ランキング` → `口コミが多い順` → `ニューオープン` |
+| Sort tab click fails | Use JS to get tab URL, navigate directly (see Step 4) |
 | JavaScript eval returns `None` | browser-use limitation — simplify to single expression; avoid console.log |
 | JavaScript returns empty array | CSS classes may have changed — use screenshot fallback |
 | CAPTCHA / rate limit | Stop, screenshot, and tell the user |
