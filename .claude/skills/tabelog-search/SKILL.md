@@ -8,7 +8,7 @@ description: >
   "best izakaya around Shibuya station", "食べログで調べて", "幫我查大阪梅田附近的燒肉",
   "where should I eat in Tokyo", or any request for restaurant recommendations in Japan.
   Don't try to search Tabelog manually — always follow this skill's workflow.
-compatibility: "Requires Claude in Chrome (MCP) for browser automation"
+compatibility: "Requires any web browsing capability: Claude in Chrome (MCP), browser-use, agent-browser, or equivalent"
 ---
 
 # Tabelog Restaurant Search
@@ -20,13 +20,18 @@ sorted by score ranking (or by review count if the user asks).
 
 ## Prerequisites
 
-Confirm these MCP tools are available before starting:
-- `tabs_context_mcp` / `tabs_create_mcp`
-- `navigate`
-- `find` / `form_input` / `computer`
-- `javascript_tool`
+This skill requires web browsing capability. Use whichever is available:
 
-If unavailable, tell the user to enable Claude in Chrome and try again.
+| Tool | Key capabilities needed |
+|------|------------------------|
+| **Claude in Chrome** (MCP) | `tabs_context_mcp`, `navigate`, `find`, `form_input`, `computer`, `javascript_tool` |
+| **browser-use** | `browser_use` skill actions (navigate, click, type, extract) |
+| **agent-browser** | equivalent navigate / interact / extract actions |
+
+If no browsing tool is available, tell the user to enable one and try again.
+
+Adapt the step-by-step instructions below to the available tool's action vocabulary —
+the workflow logic (search → sort → extract → report) stays the same regardless of which tool you use.
 
 ---
 
