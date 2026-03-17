@@ -6,9 +6,26 @@ allowed-tools: Bash(playwright-cli:*)
 
 # Browser Automation with playwright-cli
 
+## Proxy Setup (Required Before Every Session)
+
+The proxy credentials rotate every ~4 hours. Always sync `/root/.playwright/cli.config.json`
+from `$HTTP_PROXY` before opening any new browser session:
+
+```bash
+bash /root/.playwright/update-proxy.sh
+```
+
+Run this **once per task**, before the first `playwright-cli open` or `playwright-cli -s=X open`.
+If a session fails to load pages (net::ERR_TUNNEL_CONNECTION_FAILED or similar), re-run the
+script and retry — the proxy may have rotated since the config was last written.
+
+---
+
 ## Quick start
 
 ```bash
+# sync proxy config first
+bash /root/.playwright/update-proxy.sh
 # open new browser
 playwright-cli open
 # navigate to a page
