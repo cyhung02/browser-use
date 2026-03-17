@@ -16,11 +16,17 @@ unzip -oq chrome-linux64.zip -d ~
 rm chrome-linux64.zip
 
 # ─── 3. Install system dependencies ─────────────────────────────────────────
-echo "==> Installing system dependencies..."
-apt-get update -qq
+DEPS_LOG="/tmp/apt-deps-install.log"
+echo "==> Installing system dependencies (log: $DEPS_LOG)..."
+apt-get update -qq 2>&1 | tee -a "$DEPS_LOG"
 DEPS=$(grep -v '^#' ~/chrome-linux64/deb.deps | paste -sd ',')
-apt-get satisfy -y --no-install-recommends "$DEPS" > /dev/null 2>&1
-echo "    Dependencies installed."
+if apt-get satisfy -y --no-install-recommends "$DEPS" >> "$DEPS_LOG" 2>&1; then
+    echo "    Dependencies installed."
+else
+    echo "ERROR: apt-get satisfy failed. Last 30 lines of log:" >&2
+    tail -30 "$DEPS_LOG" >&2
+    exit 1
+fi
 
 # ─── 4. Create symlinks ──────────────────────────────────────────────────────
 echo "==> Creating symlinks..."
