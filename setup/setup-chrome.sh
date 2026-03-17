@@ -12,24 +12,23 @@ curl -O "$CHROME_URL"
 
 # ─── 2. Extract ─────────────────────────────────────────────────────────────
 echo "==> Extracting chrome-linux64.zip..."
-unzip -q chrome-linux64.zip
+unzip -q chrome-linux64.zip -d ~
 rm chrome-linux64.zip
 
 # ─── 3. Install system dependencies ─────────────────────────────────────────
 echo "==> Installing system dependencies..."
 apt-get update -qq
-while read pkg; do
-  apt-get satisfy -y --no-install-recommends "$pkg" > /dev/null 2>&1
-done < chrome-linux64/deb.deps
+DEPS=$(grep -v '^#' ~/chrome-linux64/deb.deps | xargs)
+apt-get satisfy -y --no-install-recommends $DEPS > /dev/null 2>&1
 echo "    Dependencies installed."
 
 # ─── 4. Create symlinks ──────────────────────────────────────────────────────
 echo "==> Creating symlinks..."
-ln -sf "$PWD/chrome-linux64/chrome" /usr/local/bin/chrome-for-testing
+ln -sf "~/chrome-linux64/chrome" /usr/local/bin/chrome-for-testing
 mkdir -p /opt/google/chrome
-ln -sf "$PWD/chrome-linux64/chrome" /opt/google/chrome/chrome
-echo "    /usr/local/bin/chrome-for-testing -> $PWD/chrome-linux64/chrome"
-echo "    /opt/google/chrome/chrome         -> $PWD/chrome-linux64/chrome"
+ln -sf "~/chrome-linux64/chrome" /opt/google/chrome/chrome
+echo "    /usr/local/bin/chrome-for-testing -> ~/chrome-linux64/chrome"
+echo "    /opt/google/chrome/chrome         -> ~/chrome-linux64/chrome"
 
 # ─── 5. Verify Chrome ────────────────────────────────────────────────────────
 echo "==> Chrome version: $(chrome-for-testing --version)"
