@@ -18,8 +18,8 @@ rm chrome-linux64.zip
 # ─── 3. Install system dependencies ─────────────────────────────────────────
 echo "==> Installing system dependencies..."
 apt-get update -qq
-DEPS=$(grep -v '^#' ~/chrome-linux64/deb.deps | xargs)
-apt-get satisfy -y --no-install-recommends $DEPS > /dev/null 2>&1
+DEPS=$(grep -v '^#' ~/chrome-linux64/deb.deps | paste -sd ',')
+apt-get satisfy -y --no-install-recommends "$DEPS" > /dev/null 2>&1
 echo "    Dependencies installed."
 
 # ─── 4. Create symlinks ──────────────────────────────────────────────────────
@@ -51,8 +51,9 @@ config = {
   "browser": {
     "browserName": "chromium",
     "launchOptions": {
-      "channel": "chrome",
-      "chromiumSandbox": False
+      "executablePath": os.path.expanduser("~/chrome-linux64/chrome"),
+      "chromiumSandbox": False,
+      "args": ["--no-sandbox", "--disable-setuid-sandbox"]
     },
     "contextOptions": {
       "ignoreHTTPSErrors": True
