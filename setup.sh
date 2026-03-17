@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-set -euo pipefail
 
 # ─── 1. Download Chrome for Testing (Stable) ───────────────────────────────
 echo "==> Fetching Chrome for Testing stable download URLs..."
