@@ -39,13 +39,14 @@ playwright-cli install --skills
 # ─── 7. Configure playwright-cli via config file ─────────────────────────────
 echo "==> Configuring playwright-cli..."
 
+cp /root/.playwright/cli.config.json /root/playwright.cli.config.json
+
 python3 - <<'PYEOF'
 import json, os
 
-src = "/root/.playwright/cli.config.json"
 dst = "/root/playwright.cli.config.json"
 
-with open(src) as f:
+with open(dst) as f:
     config = json.load(f)
 
 launch = config["browser"]["launchOptions"]
@@ -56,7 +57,7 @@ launch["executablePath"] = os.path.expanduser("~/chrome-linux64/chrome")
 with open(dst, "w") as f:
     json.dump(config, f, indent=2)
 
-print(f"    Config written to {dst}")
+print(f"    Config updated at {dst}")
 PYEOF
 
 echo ""
