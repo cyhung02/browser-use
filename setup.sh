@@ -51,9 +51,8 @@ config = {
   "browser": {
     "browserName": "chromium",
     "launchOptions": {
-      "executablePath": os.path.expanduser("~/chrome-linux64/chrome"),
-      "chromiumSandbox": False,
-      "args": ["--no-sandbox", "--disable-setuid-sandbox"]
+      "channel": "chrome",
+      "chromiumSandbox": False
     },
     "contextOptions": {
       "ignoreHTTPSErrors": True
