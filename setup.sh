@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # ─── 1. Download Chrome for Testing (Stable) ───────────────────────────────
-echo "==> Fetching Chrome for Testing stable download URLs..."
+echo "==> Fetching Chrome for Testing stable download URLs..." > ~/1.log
 CHROME_JSON=$(curl -s https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions-with-downloads.json)
 CHROME_URL=$(echo "$CHROME_JSON" | jq -r '.channels.Stable.downloads.chrome[] | select(.platform == "linux64") | .url')
 echo "    Chrome URL: $CHROME_URL"
@@ -11,19 +11,19 @@ echo "==> Downloading Chrome for Testing..."
 curl -O "$CHROME_URL"
 
 # ─── 2. Extract ─────────────────────────────────────────────────────────────
-echo "==> Extracting chrome-linux64.zip..."
+echo "==> Extracting chrome-linux64.zip..." > ~/2.log
 unzip -oq chrome-linux64.zip -d ~
 rm chrome-linux64.zip
 
 # ─── 3. Install system dependencies ─────────────────────────────────────────
-echo "==> Installing system dependencies..."
+echo "==> Installing system dependencies..." > ~/3.log
 apt-get update -qq
 DEPS=$(grep -v '^#' ~/chrome-linux64/deb.deps | paste -sd ',')
 apt-get satisfy -y --no-install-recommends "$DEPS" > /dev/null 2>&1
 echo "    Dependencies installed."
 
 # ─── 4. Verify Chrome ────────────────────────────────────────────────────────
-echo "==> Chrome version: $("$HOME/chrome-linux64/chrome" --version --no-sandbox)"
+echo "==> Chrome version: $("$HOME/chrome-linux64/chrome" --version --no-sandbox)" > ~/4.log
 
 echo ""
 echo "✅ Chrome setup complete."
