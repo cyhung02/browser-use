@@ -38,7 +38,7 @@ playwright-cli install --skills
 # ─── 7. Configure playwright-cli via config file ─────────────────────────────
 echo "==> Configuring playwright-cli..." > ~/7.log
 
-cp -r /root/.playwright /root/chrome-linux64/.playwright
+cp -r /root/.playwright /root/chrome-linux64/.
 
 python3 - <<'PYEOF'
 import json, os
