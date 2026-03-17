@@ -32,30 +32,20 @@ echo "✅ Chrome setup complete."
 echo "==> Installing playwright-cli..."
 npm install -g @playwright/cli
 
-# ─── 6. Configure playwright-cli ─────────────────────────────────────────────
+# ─── 6. Configure playwright-cli via environment variables ───────────────────
 echo "==> Configuring playwright-cli..."
 
-python3 - <<'PYEOF'
-import os, json, shutil
+{
+  echo "export PLAYWRIGHT_MCP_EXECUTABLE_PATH=\"$HOME/chrome-linux64/chrome\""
+  echo "export PLAYWRIGHT_MCP_SANDBOX=false"
+  echo "export PLAYWRIGHT_MCP_IGNORE_HTTPS_ERRORS=true"
+} >> ~/.bashrc
 
-src = "/root/.playwright"
-candidate = os.environ["PWD"]
-dst = os.path.join(candidate, ".playwright")
-shutil.copytree(src, dst, dirs_exist_ok=True)
+export PLAYWRIGHT_MCP_EXECUTABLE_PATH="$HOME/chrome-linux64/chrome"
+export PLAYWRIGHT_MCP_SANDBOX=false
+export PLAYWRIGHT_MCP_IGNORE_HTTPS_ERRORS=true
 
-config_path = os.path.join(dst, "cli.config.json")
-with open(config_path, "r") as f:
-    config = json.load(f)
-
-launch = config["browser"]["launchOptions"]
-launch.pop("channel", None)
-launch["args"] = ["--no-sandbox"]
-launch["executablePath"] = os.path.expanduser("~/chrome-linux64/chrome")
-
-with open(config_path, "w") as f:
-    json.dump(config, f, indent=2)
-print(f"    cli.config.json updated at {config_path}")
-PYEOF
+echo "    Environment variables written to ~/.bashrc"
 
 # ─── 7. Initialize playwright-cli workspace ───────────────────────────────────
 echo "==> Initializing playwright-cli workspace..."
