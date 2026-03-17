@@ -26,7 +26,6 @@ echo "    Dependencies installed."
 echo "==> Creating symlinks..."
 mkdir -p /opt/google/chrome
 ln -sf "$HOME/chrome-linux64/chrome" /opt/google/chrome/chrome
-echo "    /usr/local/bin/chrome-for-testing -> ~/chrome-linux64/chrome"
 echo "    /opt/google/chrome/chrome         -> ~/chrome-linux64/chrome"
 
 # ─── 5. Verify Chrome ────────────────────────────────────────────────────────
