@@ -39,14 +39,20 @@ if proxy_url:
 else:
     print("    No HTTP_PROXY found, skipping proxy config.")
 
-with open("~/.playwright/cli.config.json", "w") as f:
+config_path = os.path.expanduser("~/.playwright/cli.config.json")
+with open(config_path, "w") as f:
     json.dump(config, f, indent=2)
-print("    Written to ~/.playwright/cli.config.json")
+print(f"    Written to {config_path}")
 PYEOF
 
 # ─── 3. Initialize playwright-cli workspace ───────────────────────────────────
 echo "==> Initializing playwright-cli workspace..."
 playwright-cli install --skills
+
+# ─── 4. Symlink ~/.playwright into pwd so cli.config.json is found ────────────
+echo "==> Linking ~/.playwright into current workspace..."
+ln -sf "$HOME/.playwright" "$(pwd)/.playwright"
+echo "    $(pwd)/.playwright -> $HOME/.playwright"
 
 echo ""
 echo "✅ playwright-cli setup complete. Test with: playwright-cli open https://example.com"

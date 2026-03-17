@@ -12,7 +12,7 @@ curl -O "$CHROME_URL"
 
 # ─── 2. Extract ─────────────────────────────────────────────────────────────
 echo "==> Extracting chrome-linux64.zip..."
-unzip -q chrome-linux64.zip -d ~
+unzip -oq chrome-linux64.zip -d ~
 rm chrome-linux64.zip
 
 # ─── 3. Install system dependencies ─────────────────────────────────────────
@@ -24,9 +24,9 @@ echo "    Dependencies installed."
 
 # ─── 4. Create symlinks ──────────────────────────────────────────────────────
 echo "==> Creating symlinks..."
-ln -sf "~/chrome-linux64/chrome" /usr/local/bin/chrome-for-testing
+ln -sf "$HOME/chrome-linux64/chrome" /usr/local/bin/chrome-for-testing
 mkdir -p /opt/google/chrome
-ln -sf "~/chrome-linux64/chrome" /opt/google/chrome/chrome
+ln -sf "$HOME/chrome-linux64/chrome" /opt/google/chrome/chrome
 echo "    /usr/local/bin/chrome-for-testing -> ~/chrome-linux64/chrome"
 echo "    /opt/google/chrome/chrome         -> ~/chrome-linux64/chrome"
 
