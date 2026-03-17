@@ -1,7 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# ─── 1. Configure playwright-cli ─────────────────────────────────────────────
+# ─── 1. Install playwright-cli ───────────────────────────────────────────────
+echo "==> Installing playwright-cli..."
+npm install -g @playwright/cli
+
+# ─── 2. Configure playwright-cli ─────────────────────────────────────────────
 echo "==> Configuring playwright-cli..."
 mkdir -p .playwright
 
@@ -40,7 +44,7 @@ with open(".playwright/cli.config.json", "w") as f:
 print("    Written to .playwright/cli.config.json")
 PYEOF
 
-# ─── 2. Initialize playwright-cli workspace ───────────────────────────────────
+# ─── 3. Initialize playwright-cli workspace ───────────────────────────────────
 echo "==> Initializing playwright-cli workspace..."
 playwright-cli install --skills
 
