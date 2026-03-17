@@ -75,7 +75,7 @@ PYEOF
 
 # ─── 7. Initialize playwright-cli workspace ───────────────────────────────────
 echo "==> Initializing playwright-cli workspace..."
-playwright-cli install
+playwright-cli install --skills
 
 echo ""
 echo "✅ Setup complete. Test with: playwright-cli open https://example.com"
