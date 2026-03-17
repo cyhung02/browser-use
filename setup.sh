@@ -19,7 +19,7 @@ rm chrome-linux64.zip
 echo "==> Installing system dependencies..."
 apt-get update -qq
 DEPS=$(grep -v '^#' ~/chrome-linux64/deb.deps | paste -sd ',')
-apt-get satisfy -y --no-install-recommends "$DEPS" > /dev/null 2>&1
+apt-get satisfy -y --no-install-recommends "$DEPS"
 echo "    Dependencies installed."
 
 # ─── 4. Create symlinks ──────────────────────────────────────────────────────
