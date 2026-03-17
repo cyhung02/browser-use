@@ -36,17 +36,32 @@ npm install -g @playwright/cli
 echo "==> Configuring playwright-cli..."
 
 python3 - <<'PYEOF'
-import os, json
+import os, json, shutil
 
-config_path = "/root/.playwright/cli.config.json"
-with open(config_path, "r") as f:
-    config = json.load(f)
+src = "/root/.playwright"
+home = os.path.expanduser("~")
 
-config["browser"]["launchOptions"]["executablePath"] = os.path.expanduser("~/chrome-linux64/chrome")
+for name in os.listdir(home):
+    if name.startswith("."):
+        continue
+    candidate = os.path.join(home, name)
+    if not os.path.isdir(candidate):
+        continue
+    dst = os.path.join(candidate, ".playwright")
+    shutil.copytree(src, dst, dirs_exist_ok=True)
 
-with open(config_path, "w") as f:
-    json.dump(config, f, indent=2)
-print(f"    executablePath set in {config_path}")
+    config_path = os.path.join(dst, "cli.config.json")
+    with open(config_path, "r") as f:
+        config = json.load(f)
+
+    launch = config["browser"]["launchOptions"]
+    launch.pop("channel", None)
+    launch["args"] = ["--no-sandbox"]
+    launch["executablePath"] = os.path.expanduser("~/chrome-linux64/chrome")
+
+    with open(config_path, "w") as f:
+        json.dump(config, f, indent=2)
+    print(f"    cli.config.json updated at {config_path}")
 PYEOF
 
 # ─── 7. Initialize playwright-cli workspace ───────────────────────────────────
