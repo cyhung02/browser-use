@@ -7,7 +7,7 @@ npm install -g @playwright/cli
 
 # ─── 2. Configure playwright-cli ─────────────────────────────────────────────
 echo "==> Configuring playwright-cli..."
-mkdir -p .playwright
+mkdir -p ~/.playwright
 
 python3 - <<'PYEOF'
 import urllib.parse, os, json
@@ -39,9 +39,9 @@ if proxy_url:
 else:
     print("    No HTTP_PROXY found, skipping proxy config.")
 
-with open(".playwright/cli.config.json", "w") as f:
+with open("~/.playwright/cli.config.json", "w") as f:
     json.dump(config, f, indent=2)
-print("    Written to .playwright/cli.config.json")
+print("    Written to ~/.playwright/cli.config.json")
 PYEOF
 
 # ─── 3. Initialize playwright-cli workspace ───────────────────────────────────
