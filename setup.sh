@@ -77,10 +77,5 @@ PYEOF
 echo "==> Initializing playwright-cli workspace..."
 playwright-cli install --skills
 
-# ─── 8. Symlink ~/.playwright into pwd so cli.config.json is found ────────────
-echo "==> Linking ~/.playwright into current workspace..."
-ln -sf "$HOME/.playwright" "$(pwd)/.playwright"
-echo "    $(pwd)/.playwright -> $HOME/.playwright"
-
 echo ""
 echo "✅ playwright-cli setup complete. Test with: playwright-cli open https://example.com"
