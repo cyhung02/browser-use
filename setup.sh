@@ -39,8 +39,8 @@ playwright-cli install --skills
 # ─── 7. Configure playwright-cli via config file ─────────────────────────────
 echo "==> Configuring playwright-cli..."
 
-mkdir -p /root/playwright
-cp /root/.playwright/cli.config.json /root/playwright/cli.config.json
+mkdir -p ~/playwright
+cp /root/.playwright/cli.config.json ~/playwright/cli.config.json
 
 python3 - <<'PYEOF'
 import json, os
