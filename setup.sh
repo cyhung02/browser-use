@@ -38,25 +38,34 @@ playwright-cli install --skills
 # ─── 7. Configure playwright-cli via config file ─────────────────────────────
 echo "==> Configuring playwright-cli..." > ~/7.log
 
-cp -r /root/.playwright /root/chrome-linux64/.
-
 python3 - <<'PYEOF'
 import json, os
+from urllib.parse import urlparse
 
-dst = "/root/chrome-linux64/.playwright/cli.config.json"
+dst = "/root/.playwright/cli.config.json"
+os.makedirs(os.path.dirname(dst), exist_ok=True)
 
 with open(dst) as f:
     config = json.load(f)
 
+proxy_url = os.environ.get("HTTP_PROXY", "")
+parsed = urlparse(proxy_url)
+proxy_server = f"{parsed.scheme}://{parsed.hostname}:{parsed.port}"
+
 launch = config["browser"]["launchOptions"]
 launch.pop("channel", None)
-launch["args"] = ["--no-sandbox"]
 launch["executablePath"] = os.path.expanduser("~/chrome-linux64/chrome")
+launch["args"] = ["--no-sandbox"]
+launch["proxy"] = {
+    "server": proxy_server,
+    "username": parsed.username or "",
+    "password": parsed.password or ""
+}
 
 with open(dst, "w") as f:
     json.dump(config, f, indent=2)
 
-print(f"    Config updated at {dst}")
+print(f"    Config written at {dst}")
 PYEOF
 
 echo ""
