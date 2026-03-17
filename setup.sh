@@ -17,10 +17,9 @@ rm chrome-linux64.zip
 
 # ─── 3. Install system dependencies ─────────────────────────────────────────
 echo "==> Installing system dependencies..."
-apt-get update -qq
-while read pkg; do
-  apt-get satisfy -y --no-install-recommends "$pkg" > /dev/null 2>&1
-done < $HOME/chrome-linux64/deb.deps
+apt-get update -qq 2>>~/setup.log
+DEPS=$(grep -v '^#' ~/chrome-linux64/deb.deps | paste -sd ',')
+apt-get satisfy -y --no-install-recommends "$DEPS" 2>>~/setup.log
 echo "    Dependencies installed."
 
 # ─── 4. Create symlinks ──────────────────────────────────────────────────────
