@@ -39,12 +39,13 @@ playwright-cli install --skills
 # ─── 7. Configure playwright-cli via config file ─────────────────────────────
 echo "==> Configuring playwright-cli..."
 
-cp /root/.playwright/cli.config.json /root/playwright.cli.config.json
+mkdir -p /root/playwright
+cp /root/.playwright/cli.config.json /root/playwright/cli.config.json
 
 python3 - <<'PYEOF'
 import json, os
 
-dst = "/root/playwright.cli.config.json"
+dst = "/root/playwright/cli.config.json"
 
 with open(dst) as f:
     config = json.load(f)
