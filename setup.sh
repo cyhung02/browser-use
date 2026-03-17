@@ -22,23 +22,17 @@ DEPS=$(grep -v '^#' ~/chrome-linux64/deb.deps | paste -sd ',')
 apt-get satisfy -y --no-install-recommends "$DEPS" > /dev/null 2>&1
 echo "    Dependencies installed."
 
-# ─── 4. Create symlinks ──────────────────────────────────────────────────────
-echo "==> Creating symlinks..."
-mkdir -p /opt/google/chrome
-ln -sf "$HOME/chrome-linux64/chrome" /opt/google/chrome/chrome
-echo "    /opt/google/chrome/chrome         -> ~/chrome-linux64/chrome"
-
-# ─── 5. Verify Chrome ────────────────────────────────────────────────────────
-echo "==> Chrome version: $(chrome-for-testing --version)"
+# ─── 4. Verify Chrome ────────────────────────────────────────────────────────
+echo "==> Chrome version: $("$HOME/chrome-linux64/chrome" --version --no-sandbox)"
 
 echo ""
 echo "✅ Chrome setup complete."
 
-# ─── 6. Install playwright-cli ───────────────────────────────────────────────
+# ─── 5. Install playwright-cli ───────────────────────────────────────────────
 echo "==> Installing playwright-cli..."
 npm install -g @playwright/cli
 
-# ─── 7. Configure playwright-cli ─────────────────────────────────────────────
+# ─── 6. Configure playwright-cli ─────────────────────────────────────────────
 echo "==> Configuring playwright-cli..."
 mkdir -p ~/.playwright
 
@@ -50,6 +44,7 @@ config = {
     "browserName": "chromium",
     "launchOptions": {
       "channel": "chrome",
+      "executablePath": os.path.expanduser("~/chrome-linux64/chrome"),
       "chromiumSandbox": False
     },
     "contextOptions": {
@@ -78,11 +73,11 @@ with open(config_path, "w") as f:
 print(f"    Written to {config_path}")
 PYEOF
 
-# ─── 8. Initialize playwright-cli workspace ───────────────────────────────────
+# ─── 7. Initialize playwright-cli workspace ───────────────────────────────────
 echo "==> Initializing playwright-cli workspace..."
 playwright-cli install --skills
 
-# ─── 9. Symlink ~/.playwright into pwd so cli.config.json is found ────────────
+# ─── 8. Symlink ~/.playwright into pwd so cli.config.json is found ────────────
 echo "==> Linking ~/.playwright into current workspace..."
 ln -sf "$HOME/.playwright" "$(pwd)/.playwright"
 echo "    $(pwd)/.playwright -> $HOME/.playwright"
