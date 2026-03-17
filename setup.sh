@@ -31,12 +31,8 @@ echo "✅ Chrome setup complete."
 echo "==> Installing playwright-cli..." > ~/5.log
 npm install -g @playwright/cli
 
-# ─── 6. Initialize playwright-cli workspace ───────────────────────────────────
-echo "==> Initializing playwright-cli workspace..." > ~/6.log
-playwright-cli install --skills
-
-# ─── 7. Configure playwright-cli via config file ─────────────────────────────
-echo "==> Configuring playwright-cli..." > ~/7.log
+# ─── 6. Configure playwright-cli via config file ─────────────────────────────
+echo "==> Configuring playwright-cli..." > ~/6.log
 
 python3 - <<'PYEOF'
 import json, os
