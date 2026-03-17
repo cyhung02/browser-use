@@ -39,21 +39,29 @@ python3 - <<'PYEOF'
 import os, json, shutil
 
 src = "/root/.playwright"
-dst = os.path.join(os.getcwd(), ".playwright")
-shutil.copytree(src, dst, dirs_exist_ok=True)
+home = os.path.expanduser("~")
 
-config_path = os.path.join(dst, "cli.config.json")
-with open(config_path, "r") as f:
-    config = json.load(f)
+for name in os.listdir(home):
+    if name.startswith("."):
+        continue
+    candidate = os.path.join(home, name)
+    if not os.path.isdir(candidate):
+        continue
+    dst = os.path.join(candidate, ".playwright")
+    shutil.copytree(src, dst, dirs_exist_ok=True)
 
-launch = config["browser"]["launchOptions"]
-launch.pop("channel", None)
-launch["args"] = ["--no-sandbox"]
-launch["executablePath"] = os.path.expanduser("~/chrome-linux64/chrome")
+    config_path = os.path.join(dst, "cli.config.json")
+    with open(config_path, "r") as f:
+        config = json.load(f)
 
-with open(config_path, "w") as f:
-    json.dump(config, f, indent=2)
-print(f"    cli.config.json updated at {config_path}")
+    launch = config["browser"]["launchOptions"]
+    launch.pop("channel", None)
+    launch["args"] = ["--no-sandbox"]
+    launch["executablePath"] = os.path.expanduser("~/chrome-linux64/chrome")
+
+    with open(config_path, "w") as f:
+        json.dump(config, f, indent=2)
+    print(f"    cli.config.json updated at {config_path}")
 PYEOF
 
 # ─── 7. Initialize playwright-cli workspace ───────────────────────────────────
