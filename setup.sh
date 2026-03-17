@@ -42,7 +42,7 @@ python3 - <<'PYEOF'
 import json, os
 from urllib.parse import urlparse
 
-dst = "/root/.playwright/cli.config.json"
+dst = os.path.expanduser("~/.playwright/cli.config.json")
 os.makedirs(os.path.dirname(dst), exist_ok=True)
 
 with open(dst) as f:
