@@ -34,48 +34,5 @@ echo "    /opt/google/chrome/chrome         -> $PWD/chrome-linux64/chrome"
 # ─── 5. Verify Chrome ────────────────────────────────────────────────────────
 echo "==> Chrome version: $(chrome-for-testing --version)"
 
-# ─── 6. Configure playwright-cli ─────────────────────────────────────────────
-echo "==> Configuring playwright-cli..."
-mkdir -p .playwright
-
-python3 - <<'PYEOF'
-import urllib.parse, os, json
-
-config = {
-  "browser": {
-    "browserName": "chromium",
-    "launchOptions": {
-      "channel": "chrome",
-      "chromiumSandbox": False
-    },
-    "contextOptions": {
-      "ignoreHTTPSErrors": True
-    }
-  }
-}
-
-# Configure proxy from HTTP_PROXY env var if available
-proxy_url = os.environ.get("HTTP_PROXY") or os.environ.get("http_proxy")
-if proxy_url:
-    p = urllib.parse.urlparse(proxy_url)
-    proxy_config = {"server": f"{p.scheme}://{p.hostname}:{p.port}"}
-    if p.username:
-        proxy_config["username"] = p.username
-    if p.password:
-        proxy_config["password"] = p.password
-    config["browser"]["launchOptions"]["proxy"] = proxy_config
-    print(f"    Proxy configured: {p.scheme}://{p.hostname}:{p.port}")
-else:
-    print("    No HTTP_PROXY found, skipping proxy config.")
-
-with open(".playwright/cli.config.json", "w") as f:
-    json.dump(config, f, indent=2)
-print("    Written to .playwright/cli.config.json")
-PYEOF
-
-# ─── 7. Initialize playwright-cli workspace ───────────────────────────────────
-echo "==> Initializing playwright-cli workspace..."
-playwright-cli install --skills
-
 echo ""
-echo "✅ Setup complete. Test with: playwright-cli open https://example.com"
+echo "✅ Chrome setup complete."
