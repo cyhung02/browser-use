@@ -43,7 +43,6 @@ config = {
   "browser": {
     "browserName": "chromium",
     "launchOptions": {
-      "channel": "chrome",
       "executablePath": os.path.expanduser("~/chrome-linux64/chrome"),
       "chromiumSandbox": False
     },
