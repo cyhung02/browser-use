@@ -1,3 +1,4 @@
 *.zip
 chrome-linux64/
 .playwright-cli/
+.playwright/
