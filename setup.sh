@@ -45,27 +45,21 @@ from urllib.parse import urlparse
 dst = "/root/.playwright/cli.config.json"
 os.makedirs(os.path.dirname(dst), exist_ok=True)
 
+with open(dst) as f:
+    config = json.load(f)
+
 proxy_url = os.environ.get("HTTP_PROXY", "")
 parsed = urlparse(proxy_url)
 proxy_server = f"{parsed.scheme}://{parsed.hostname}:{parsed.port}"
 
-config = {
-  "browser": {
-    "browserName": "chromium",
-    "launchOptions": {
-      "chromiumSandbox": False,
-      "executablePath": os.path.expanduser("~/chrome-linux64/chrome"),
-      "args": ["--no-sandbox"],
-      "proxy": {
-        "server": proxy_server,
-        "username": parsed.username or "",
-        "password": parsed.password or ""
-      }
-    },
-    "contextOptions": {
-      "ignoreHTTPSErrors": True
-    }
-  }
+launch = config["browser"]["launchOptions"]
+launch.pop("channel", None)
+launch["executablePath"] = os.path.expanduser("~/chrome-linux64/chrome")
+launch["args"] = ["--no-sandbox"]
+launch["proxy"] = {
+    "server": proxy_server,
+    "username": parsed.username or "",
+    "password": parsed.password or ""
 }
 
 with open(dst, "w") as f:
