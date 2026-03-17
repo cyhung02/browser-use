@@ -1,4 +1,5 @@
 *.zip
+*.png
 chrome-linux64/
 .playwright-cli/
 .playwright/
