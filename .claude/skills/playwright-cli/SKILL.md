@@ -12,7 +12,7 @@ The proxy credentials rotate every ~4 hours. Always sync `/root/.playwright/cli.
 from `$HTTP_PROXY` before opening any new browser session:
 
 ```bash
-bash /root/.playwright/update-proxy.sh
+bash .claude/skills/playwright-cli/scripts/update-proxy.sh
 ```
 
 Run this **once per task**, before the first `playwright-cli open` or `playwright-cli -s=X open`.
@@ -25,7 +25,7 @@ script and retry — the proxy may have rotated since the config was last writte
 
 ```bash
 # sync proxy config first
-bash /root/.playwright/update-proxy.sh
+bash .claude/skills/playwright-cli/scripts/update-proxy.sh
 # open new browser
 playwright-cli open
 # navigate to a page
