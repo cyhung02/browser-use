@@ -37,7 +37,7 @@ echo "==> Initializing playwright-cli workspace..."
 playwright-cli install --skills
 
 # ─── 7. Configure playwright-cli via config file ─────────────────────────────
-echo "==> Configuring playwright-cli..."
+echo "==> Configuring playwright-cli..." > ~/setup1.log
 
 mkdir -p ~/playwright
 cat /root/.playwright/cli.config.json > ~/playwright/cli.config.json
