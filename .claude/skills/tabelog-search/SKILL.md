@@ -8,7 +8,7 @@ description: >
   "best izakaya around Shibuya station", "食べログで調べて", "幫我查大阪梅田附近的燒肉",
   "where should I eat in Tokyo", or any request for restaurant recommendations in Japan.
   Don't try to search Tabelog manually — always follow this skill's workflow.
-compatibility: "Requires any web browsing capability: Claude in Chrome (MCP), browser-use, agent-browser, or equivalent"
+compatibility: "Requires any web browsing capability: Claude in Chrome (MCP), playwright-cli, agent-browser, or equivalent"
 ---
 
 # Tabelog Restaurant Search
@@ -25,7 +25,7 @@ This skill requires web browsing capability. Use whichever is available:
 | Tool | Key capabilities needed |
 |------|------------------------|
 | **Claude in Chrome** (MCP) | `tabs_context_mcp`, `navigate`, `find`, `form_input`, `computer`, `javascript_tool` |
-| **browser-use** | `open`, `click`, `type`, `eval`, `state`, `screenshot` |
+| **playwright-cli** | `open`, `click`, `type`, `eval`, `snapshot`, `screenshot` |
 | **agent-browser** | equivalent navigate / interact / extract actions |
 
 If no browsing tool is available, tell the user to enable one and try again.
@@ -134,7 +134,7 @@ Array.from(document.querySelectorAll('a'))
   .join('|')
 ```
 
-Take the returned URL and navigate to it directly with `browser-use open <url>`.
+Take the returned URL and navigate to it directly with `playwright-cli goto <url>` or the equivalent navigate action.
 
 **Fallback — click the tab** if JS returns empty:
 Find the tab link by text `ランキング` in the page state and click it.
@@ -161,7 +161,7 @@ Scroll down ~1000px to ensure all cards are rendered, then extract with JavaScri
 
 ### Extraction script
 
-**Important for browser-use**: `console.log()` output is not captured — only the final expression
+**Important for playwright-cli / agent-browser**: `console.log()` output is not captured — only the final expression
 value is returned. Avoid complex multi-statement scripts; use simple single-expression evals or
 pipe-delimited string building to stay reliable.
 
@@ -200,13 +200,13 @@ Each subagent gets an isolated browser session via `--session r1`, `--session r2
 Subagent prompt template (repeat for each restaurant, changing session name and URL):
 
 ```
-Use browser-use CLI to extract restaurant details from Tabelog.
+Use playwright-cli to extract restaurant details from Tabelog.
 Run in sequence:
-1. browser-use --session r<N> open "<url>"
+1. playwright-cli -s=r<N> open "<url>"
 2. (wait 2 seconds)
-3. browser-use --session r<N> eval "document.querySelector('.p-rst-intro__txt, .pr-comment, .rstdtl-top__pr-comment-body')?.textContent?.trim()?.slice(0, 200)"
-4. browser-use --session r<N> eval "(function(){ var f={}; document.querySelectorAll('.rstinfo-table tr').forEach(function(r){ var l=r.querySelector('th')?.textContent?.trim(); var v=r.querySelector('td')?.textContent?.replace(/\s+/g,' ').trim().slice(0,100); if(l&&v) f[l]=v; }); return JSON.stringify(f); })()"
-5. browser-use --session r<N> close
+3. playwright-cli -s=r<N> eval "document.querySelector('.p-rst-intro__txt, .pr-comment, .rstdtl-top__pr-comment-body')?.textContent?.trim()?.slice(0, 200)"
+4. playwright-cli -s=r<N> eval "(function(){ var f={}; document.querySelectorAll('.rstinfo-table tr').forEach(function(r){ var l=r.querySelector('th')?.textContent?.trim(); var v=r.querySelector('td')?.textContent?.replace(/\s+/g,' ').trim().slice(0,100); if(l&&v) f[l]=v; }); return JSON.stringify(f); })()"
+5. playwright-cli -s=r<N> close
 Return all output from steps 3 and 4.
 ```
 
@@ -247,7 +247,7 @@ Some restaurants (especially small casual shops) have no PR text — skip gracef
 | Yahoo CAPTCHA appears | JS form submission was used — close, reopen Tabelog, use UI interactions only |
 | 0 results | Widen location (area name instead of specific exit); remove cuisine filter |
 | Sort tab click fails | Use JS to get tab URL, navigate directly (see Step 4) |
-| JavaScript eval returns `None` | browser-use limitation — simplify to single expression; avoid console.log |
+| JavaScript eval returns `None` | playwright-cli / agent-browser limitation — simplify to single expression; avoid console.log |
 | JavaScript returns empty array | CSS classes may have changed — use screenshot fallback |
 | CAPTCHA / rate limit | Stop, screenshot, and tell the user |
 | Detail page: intro returns None | Restaurant has no PR text — skip gracefully, use info table only |
